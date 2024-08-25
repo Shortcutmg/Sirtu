@@ -1,0 +1,257 @@
+index.html
+-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Messenger</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+        }
+        #chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow: hidden;
+        }
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            border-bottom: 1px solid #ccc;
+            padding: 5px;
+        }
+        #input-area {
+            display: flex;
+        }
+        #input-area input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #input-area button {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat">
+        <div id="messages"></div>
+        <div id="input-area">
+            <input type="text" id="message-input" placeholder="Type a message">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sendButton = document.getElementById('send-button');
+            const messageInput = document.getElementById('message-input');
+            const messagesContainer = document.getElementById('messages');
+
+            // Set current user
+            const currentUser = prompt('Enter your name:') || 'User';
+
+            // Load messages from localStorage
+            function loadMessages() {
+                const messages = JSON.parse(localStorage.getItem('messages')) || [];
+                messagesContainer.innerHTML = '';
+                messages.forEach(msg => {
+                    addMessage(msg.user, msg.text);
+                });
+            }
+
+            // Add message to the messages container
+            function addMessage(user, text) {
+                const messageElement = document.createElement('div');
+                messageElement.textContent = `${user}: ${text}`;
+                messagesContainer.appendChild(messageElement);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // Send message
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message) {
+                    const messages = JSON.parse(localStorage.getItem('messages')) || [];
+                    messages.push({ user: currentUser, text: message });
+                    localStorage.setItem('messages', JSON.stringify(messages));
+                    addMessage(currentUser, message);
+                    messageInput.value = '';
+                }
+            }
+
+            sendButton.addEventListener('click', sendMessage);
+
+            messageInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Initial load of messages
+            loadMessages();
+
+            // Periodically check for new messages
+            setInterval(loadMessages, 1000);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+gs.html
+-
+mkdir chat-app
+cd chat-app
+npm init -y
+npm install express socket.io
+
+
+
+
+
+Server.js
+-
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
+
+app.use(express.static('public'));
+
+io.on('connection', (socket) => {
+    console.log('New client connected');
+
+    socket.on('message', (msg) => {
+        io.emit('message', msg); // Broadcast message to all clients
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Client disconnected');
+    });
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+
+
+
+
+
+
+indx.html
+-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Messenger</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+        }
+        #chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow: hidden;
+        }
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            border-bottom: 1px solid #ccc;
+            padding: 5px;
+        }
+        #input-area {
+            display: flex;
+        }
+        #input-area input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #input-area button {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat">
+        <div id="messages"></div>
+        <div id="input-area">
+            <input type="text" id="message-input" placeholder="Type a message">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const sendButton = document.getElementById('send-button');
+            const messageInput = document.getElementById('message-input');
+            const messagesContainer = document.getElementById('messages');
+
+            function addMessage(user, text) {
+                const messageElement = document.createElement('div');
+                messageElement.textContent = `${user}: ${text}`;
+                messagesContainer.appendChild(messageElement);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message) {
+                    socket.emit('message', { user: prompt('Enter your name:'), text: message });
+                    messageInput.value = '';
+                }
+            }
+
+            sendButton.addEventListener('click', sendMessage);
+
+            messageInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            socket.on('message', (msg) => {
+                addMessage(msg.user, msg.text);
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+start.js     (start server script)
+-
+node server.js
